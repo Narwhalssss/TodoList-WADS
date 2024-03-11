@@ -35,6 +35,27 @@ button {
   border-radius: 5px;
 }
 
+.TodoWrapper .header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.image-upload-btn {
+  background-color: #E66771; 
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 50px; 
+  cursor: pointer;
+}
+
+@media (max-width: 600px) {
+  .TodoWrapper .header {
+      flex-direction: column;
+  }
+}
+
 .TodoForm {
   width: 100%;
   margin-bottom: 1rem;
