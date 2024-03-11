@@ -1,66 +1,103 @@
-import React, {useState} from 'react'
-import { TodoForm } from './TodoForm'
-import { v4 as uuidv4} from 'uuid';
+import React, { useState, useEffect } from 'react';
+import { TodoForm } from './TodoForm';
 import { Todo } from './Todo';
 import { EditTodoForm } from './EditTodoForm';
-uuidv4();
+import { db } from '../firebase';
+import { collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
 
 export const TodoWrapper = () => {
     const [todos, setTodos] = useState([]);
     const [filter, setFilter] = useState('all');
 
-    const addTodo = (todo) => {
-        setTodos([...todos, {id: uuidv4(), task: todo, completed: false, isEditing: false}])
-        console.log(todos)
-    } 
+    useEffect(() => {
+        const q = query(collection(db, "todos"));
+        const unsubscribe = onSnapshot(q, (querySnapshot) => {
+            const todosArray = querySnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+            setTodos(todosArray);
+        });
 
-    const toggleComplete = (id) => {
-        setTodos(
-          todos.map((todo) =>
-            todo.id === id ? { ...todo, completed: !todo.completed } : todo
-          )
-        );
-      }
+        return () => unsubscribe(); // Clean up on unmount
+    }, []);
 
-      const deleteTodo = (id) => {
-        setTodos(todos.filter(todo => todo.id !==id))
-      }
+    const addTodo = async (todo) => {
+        try {
+            await addDoc(collection(db, "todos"), {
+                task: todo,
+                completed: false,
+            });
+        } catch (error) {
+            console.error("Error adding document: ", error);
+        }
+    };
 
-      const editTodo = (id) => {
-        setTodos(todos.map(todo => todo.id === id ? 
-            {...todo, isEditing: !todo.isEditing} : todo ))
-      }
-      
-      const editTask = (task,id) => {
-        setTodos(todos.map(todo => todo.id === id ? {...todo, task, isEditing: !todo.isEditing} 
-            : todo))
-      }
+    const toggleComplete = async (id) => {
+        const todoRef = doc(db, "todos", id);
+        const todo = todos.find(todo => todo.id === id);
+        try {
+            await updateDoc(todoRef, {
+                completed: !todo.completed
+            });
+        } catch (error) {
+            console.error("Error updating document: ", error);
+        }
+    };
 
-      const filteredTodos = todos.filter(todo => {
+    const deleteTodo = async (id) => {
+        const todoRef = doc(db, "todos", id);
+        try {
+            await deleteDoc(todoRef);
+        } catch (error) {
+            console.error("Error deleting document: ", error);
+        }
+    };
+
+    const editTask = async (task, id) => {
+        const todoRef = doc(db, "todos", id);
+        try {
+            await updateDoc(todoRef, {
+                task: task,
+                isEditing: false
+            });
+        } catch (error) {
+            console.error("Error updating document: ", error);
+        }
+    };
+
+    const setEditingTodo = (id) => {
+      setTodos(todos.map(todo => todo.id === id ? { ...todo, isEditing: true } : todo));
+    };
+
+    const handleImageUpload = () => {
+      // Logic to handle image upload
+  };
+
+    const filteredTodos = todos.filter(todo => {
         if (filter === 'completed') return todo.completed;
         if (filter === 'notCompleted') return !todo.completed;
         return true; 
-      });
+    });
 
-      return (
+    return (
         <div className='TodoWrapper'>
             <h1>Lets Get it!</h1>
             <TodoForm addTodo={addTodo}/>
             <div>
-                <button className='todo-btn' Click={() => setFilter('all')}>All</button>
+                <button className='todo-btn' onClick={() => setFilter('all')}>All</button>
                 <button className='todo-btn' onClick={() => setFilter('completed')}>Completed</button>
                 <button className='todo-btn' onClick={() => setFilter('notCompleted')}>Not Completed</button>
             </div>
             {filteredTodos.map((todo, index) => (
                 todo.isEditing ? (
-                    <EditTodoForm editTodo={editTask} task={todo}/>
+                  <EditTodoForm key={todo.id} editTodo={editTask} task={todo} />
                 ) : ( 
-                    <Todo task={todo} key={index}   
+                    <Todo  
+                    task={todo}
+                    key={todo.id}
                     toggleComplete={toggleComplete}
                     deleteTodo={deleteTodo}
-                    editTodo={editTodo}/>
+                    setEditingTodo={setEditingTodo} /> 
                 )
             ))}
         </div>
     );
-}
+};
