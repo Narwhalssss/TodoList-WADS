@@ -47,7 +47,24 @@
     border-radius: 5px;
     cursor: pointer;
   }
+
   
+  .login-button.google {
+    background-color: #ffffff; 
+    color: #000000; 
+    border: 1px solid #dddddd; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    gap: 10px; 
+    cursor: pointer;
+  }
+  
+  .login-button.google img {
+    height: 20px; 
+    width: 20px; 
+  }
 
   
   .login-links {
