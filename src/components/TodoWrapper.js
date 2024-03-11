@@ -1,9 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TodoForm } from './TodoForm';
 import { Todo } from './Todo';
 import { EditTodoForm } from './EditTodoForm';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import { collection, addDoc, query, onSnapshot, doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth'
+
 
 export const TodoWrapper = () => {
     const [todos, setTodos] = useState([]);
@@ -18,6 +21,19 @@ export const TodoWrapper = () => {
 
         return () => unsubscribe(); // Clean up on unmount
     }, []);
+
+    const navigate = useNavigate();
+
+    const logout = () => {
+      signOut(auth).then(() => {
+          // Sign-out successful.
+          console.log("Logged out successfully");
+          navigate("/"); // Navigate to login screen after logout
+      }).catch((error) => {
+          // An error happened.
+          console.error("Error logging out: ", error);
+      });
+  };
 
     const addTodo = async (todo) => {
         try {
@@ -67,10 +83,6 @@ export const TodoWrapper = () => {
       setTodos(todos.map(todo => todo.id === id ? { ...todo, isEditing: true } : todo));
     };
 
-    const handleImageUpload = () => {
-      // Logic to handle image upload
-  };
-
     const filteredTodos = todos.filter(todo => {
         if (filter === 'completed') return todo.completed;
         if (filter === 'notCompleted') return !todo.completed;
@@ -80,6 +92,7 @@ export const TodoWrapper = () => {
     return (
         <div className='TodoWrapper'>
             <h1>Lets Get it!</h1>
+            <button className='todo-btn' onClick={logout}>Logout</button>
             <TodoForm addTodo={addTodo}/>
             <div>
                 <button className='todo-btn' onClick={() => setFilter('all')}>All</button>
